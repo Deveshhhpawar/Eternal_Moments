@@ -1,4 +1,5 @@
-# 🚀 Project Name
+# 🚀Eternal_Moments
+
 
 A modern web application built with **React, TypeScript, Vite, Tailwind CSS, and shadcn-ui**.  
 Fast, responsive, and developer-friendly.
