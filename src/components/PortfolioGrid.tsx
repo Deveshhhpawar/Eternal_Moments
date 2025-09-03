@@ -1,15 +1,17 @@
 "use client";
-import { useState, useRef } from "react";
+import React, { useState, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Eye, Heart, Share2 } from "lucide-react";
 import { motion, useScroll, useTransform } from "framer-motion";
-import BrideandGroom  from "@/assets/BrideandGroom.jpeg";
-import sangiiit from "@/assets/sangittt.jpeg"
-import haldi from "@/assets/haldi.jpg"
-import engagement from "@/assets/engagement.jpeg"
-import recep from "@/assets/recep.jpeg"
-import mehendi from "@/assets/mehendii.jpg"
+
+// Images
+import BrideandGroom from "@/assets/BrideandGroom.jpeg";
+import sangiiit from "@/assets/sangittt.jpeg";
+import haldi from "@/assets/haldi.jpg";
+import engagement from "@/assets/engagement.jpeg";
+import recep from "@/assets/recep.jpeg";
+import mehendi from "@/assets/mehendii.jpg";
 
 interface PortfolioItem {
   id: string;
@@ -27,9 +29,8 @@ const portfolioItems: PortfolioItem[] = [
     id: "1",
     title: "Royal Wedding",
     category: "Wedding Ceremony",
-    description:
-      "A majestic palace wedding with traditional Rajasthani rituals",
-    image: BrideandGroom, 
+    description: "A majestic palace wedding with traditional Rajasthani rituals",
+    image: BrideandGroom,
     tags: ["Traditional", "Palace", "Rajasthani"],
     likes: 234,
     views: 1520,
@@ -86,27 +87,120 @@ const portfolioItems: PortfolioItem[] = [
   },
 ];
 
-// Parallax Image Component
+// Shared parallax (one scroll listener)
 const ParallaxImage = ({ src, alt }: { src: string; alt: string }) => {
-  const ref = useRef(null);
-  const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ["start end", "end start"],
-  });
-
-  // image will move -30px to +30px while scrolling
-  const y = useTransform(scrollYProgress, [0, 1], ["-30px", "30px"]);
+  const { scrollY } = useScroll();
+  const y = useTransform(scrollY, [0, 500], ["-20px", "20px"]);
 
   return (
     <motion.img
-      ref={ref}
       src={src}
       alt={alt}
+      loading="lazy"
       style={{ y }}
-      className="w-full h-64 object-cover rounded-t-2xl"
+      className="w-full h-64 object-cover rounded-t-2xl will-change-transform"
     />
   );
 };
+
+// Memoized card to prevent re-renders
+const PortfolioCard = React.memo(
+  ({
+    item,
+    hoveredItem,
+    setHoveredItem,
+  }: {
+    item: PortfolioItem;
+    hoveredItem: string | null;
+    setHoveredItem: (id: string | null) => void;
+  }) => (
+    <motion.div
+      key={item.id}
+      initial={{ opacity: 0, y: 30 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, ease: "easeOut" }}
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+      viewport={{ once: true }}
+      className="will-change-transform"
+    >
+      <Card
+        className="group overflow-hidden border-0 shadow-soft hover:shadow-luxury transition-all duration-500 bg-gradient-card rounded-2xl"
+        onMouseEnter={() => setHoveredItem(item.id)}
+        onMouseLeave={() => setHoveredItem(null)}
+      >
+        <div className="relative overflow-hidden rounded-t-2xl">
+          {/* Parallax Image */}
+          <ParallaxImage src={item.image} alt={item.title} />
+
+          {/* Hover Overlay */}
+          <div
+            className={`absolute inset-0 bg-gradient-hero transition-opacity duration-300 ${
+              hoveredItem === item.id ? "opacity-100" : "opacity-0"
+            } rounded-t-2xl`}
+          >
+            <div className="absolute inset-0 flex items-center justify-center gap-4">
+              <button className="p-3 bg-background/20 backdrop-blur-sm rounded-full text-background hover:bg-background/30 transition-colors">
+                <Eye size={20} />
+              </button>
+              <button className="p-3 bg-background/20 backdrop-blur-sm rounded-full text-background hover:bg-background/30 transition-colors">
+                <Heart size={20} />
+              </button>
+              <button className="p-3 bg-background/20 backdrop-blur-sm rounded-full text-background hover:bg-background/30 transition-colors">
+                <Share2 size={20} />
+              </button>
+            </div>
+          </div>
+
+          {/* Category Badge */}
+          <Badge className="absolute top-4 left-4 bg-primary text-background">
+            {item.category}
+          </Badge>
+        </div>
+
+        <div className="p-6">
+          <motion.h3
+            className="font-luxury text-xl font-semibold text-foreground mb-2"
+            whileInView={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, y: 20 }}
+            transition={{ duration: 0.4, delay: 0.1 }}
+          >
+            {item.title}
+          </motion.h3>
+          <motion.p
+            className="text-muted-foreground mb-4 font-elegant"
+            whileInView={{ opacity: 1 }}
+            initial={{ opacity: 0 }}
+            transition={{ duration: 0.4, delay: 0.2 }}
+          >
+            {item.description}
+          </motion.p>
+
+          {/* Tags */}
+          <div className="flex flex-wrap gap-2 mb-4">
+            {item.tags.map((tag) => (
+              <Badge key={tag} variant="secondary" className="text-xs">
+                {tag}
+              </Badge>
+            ))}
+          </div>
+
+          {/* Stats */}
+          <div className="flex items-center justify-between text-sm text-muted-foreground">
+            <div className="flex items-center gap-1">
+              <Heart size={14} />
+              <span>{item.likes}</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Eye size={14} />
+              <span>{item.views}</span>
+            </div>
+          </div>
+        </div>
+      </Card>
+    </motion.div>
+  )
+);
 
 export const PortfolioGrid = () => {
   const [selectedCategory, setSelectedCategory] = useState("All");
@@ -118,17 +212,17 @@ export const PortfolioGrid = () => {
       : portfolioItems.filter((item) => item.category === selectedCategory);
 
   return (
-    <section id="portfolio" className="py-20 px-6">
+    <section id="portfolio" className="py-16 px-6">
       <div className="container mx-auto max-w-7xl">
-        {/* Section Header */}
+        {/* Header */}
         <motion.div
-          className="text-center mb-16"
-          initial={{ opacity: 0, y: 50 }}
+          className="text-center mb-14"
+          initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
+          transition={{ duration: 0.6 }}
           viewport={{ once: true }}
         >
-          <h2 className="font-luxury text-4xl md:text-5xl font-bold text-foreground mb-6">
+          <h2 className="font-luxury text-4xl md:text-5xl font-bold text-foreground mb-4">
             Our Portfolio
           </h2>
           <p className="text-muted-foreground text-lg max-w-3xl mx-auto font-elegant">
@@ -138,123 +232,20 @@ export const PortfolioGrid = () => {
           </p>
         </motion.div>
 
-        {/* Category Filter */}
-        <motion.div
-          className="flex flex-wrap justify-center gap-3 mb-12"
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          transition={{ duration: 0.6, delay: 0.3 }}
-          viewport={{ once: true }}
-        >
-
-          
-        </motion.div>
-
-        {/* Portfolio Grid */}
+        {/* Grid */}
         <motion.div
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
           initial="hidden"
           whileInView="show"
           viewport={{ once: true }}
-          variants={{
-            hidden: {},
-            show: {
-              transition: {
-                staggerChildren: 0.15,
-              },
-            },
-          }}
         >
           {filteredItems.map((item) => (
-            <motion.div
+            <PortfolioCard
               key={item.id}
-              variants={{
-                hidden: { opacity: 0, y: 40 },
-                show: { opacity: 1, y: 0 },
-              }}
-              transition={{ duration: 0.6, ease: "easeOut" }}
-              whileHover={{
-                scale: 1.03,
-                rotateX: 4,
-                rotateY: -4,
-              }}
-              whileTap={{ scale: 0.98 }}
-            >
-              <Card
-                className="group overflow-hidden border-0 shadow-soft hover:shadow-luxury transition-all duration-500 bg-gradient-card rounded-2xl"
-                onMouseEnter={() => setHoveredItem(item.id)}
-                onMouseLeave={() => setHoveredItem(null)}
-              >
-                <div className="relative overflow-hidden rounded-t-2xl">
-                  {/* Parallax Image */}
-                  <ParallaxImage src={item.image} alt={item.title} />
-
-                  {/* Overlay on hover */}
-                  <div
-                    className={`absolute inset-0 bg-gradient-hero transition-opacity duration-300 ${
-                      hoveredItem === item.id ? "opacity-100" : "opacity-0"
-                    } rounded-t-2xl`}
-                  >
-                    <div className="absolute inset-0 flex items-center justify-center gap-4">
-                      <button className="p-3 bg-background/20 backdrop-blur-sm rounded-full text-background hover:bg-background/30 transition-colors">
-                        <Eye size={20} />
-                      </button>
-                      <button className="p-3 bg-background/20 backdrop-blur-sm rounded-full text-background hover:bg-background/30 transition-colors">
-                        <Heart size={20} />
-                      </button>
-                      <button className="p-3 bg-background/20 backdrop-blur-sm rounded-full text-background hover:bg-background/30 transition-colors">
-                        <Share2 size={20} />
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Category Badge */}
-                  <Badge className="absolute top-4 left-4 bg-primary text-background">
-                    {item.category}
-                  </Badge>
-                </div>
-
-                <div className="p-6">
-                  <motion.h3
-                    className="font-luxury text-xl font-semibold text-foreground mb-2"
-                    whileInView={{ opacity: 1, y: 0 }}
-                    initial={{ opacity: 0, y: 20 }}
-                    transition={{ duration: 0.5, delay: 0.2 }}
-                  >
-                    {item.title}
-                  </motion.h3>
-                  <motion.p
-                    className="text-muted-foreground mb-4 font-elegant"
-                    whileInView={{ opacity: 1 }}
-                    initial={{ opacity: 0 }}
-                    transition={{ duration: 0.5, delay: 0.3 }}
-                  >
-                    {item.description}
-                  </motion.p>
-
-                  {/* Tags */}
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    {item.tags.map((tag) => (
-                      <Badge key={tag} variant="secondary" className="text-xs">
-                        {tag}
-                      </Badge>
-                    ))}
-                  </div>
-
-                  {/* Stats */}
-                  <div className="flex items-center justify-between text-sm text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      <Heart size={14} />
-                      <span>{item.likes}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Eye size={14} />
-                      <span>{item.views}</span>
-                    </div>
-                  </div>
-                </div>
-              </Card>
-            </motion.div>
+              item={item}
+              hoveredItem={hoveredItem}
+              setHoveredItem={setHoveredItem}
+            />
           ))}
         </motion.div>
       </div>
